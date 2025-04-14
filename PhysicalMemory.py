@@ -2,13 +2,13 @@ import numpy
 
 class PhysicalMemory:
     def __init__(self, totalSizeBytes, pageSizeBytes):
-        self.totalFrameSize : int = int(totalSizeBytes // pageSizeBytes) 
+        self.frameAmt: int = int(totalSizeBytes // pageSizeBytes) 
         self.pageSizeBytes : int = int(pageSizeBytes)
 
-        self.pageFrames = numpy.resize(numpy.array([], dtype='<U10'), self.totalFrameSize)
+        self.pageFrames = numpy.resize(numpy.array([], dtype='<U10'), self.frameAmt)
 
         self.unallocatedFramesIndices = []
-        for i in range(0, self.totalFrameSize):
+        for i in range(0, self.frameAmt):
             self.unallocatedFramesIndices.append(i)
 
         # self.blockedQueue = [] should be blocked at higher process
@@ -30,7 +30,7 @@ class PhysicalMemory:
         return programPageTable
     
     def pAllocateFrame(self, referenceName):
-        # Making private method to reduce checking
+        # Making private method to eliminate double checking (one made at parent call)
         # Make sure that pageAmt doesn't exceed the amount of pages left
         # if (not self.canAllocate(1)):
         #     raise Exception(f"Memory overflow! Unable to allocate {referenceName}")
@@ -52,9 +52,17 @@ class PhysicalMemory:
             self.pageFrames[allocatedFrameIndex] = ""
             self.unallocatedFramesIndices.append(allocatedFrameIndex)
 
-    def accessMemory(self, frameNumber, Offset):
-        pass
+    def accessMemory(self, frameIndex, offset, identifier):
+        if (frameIndex >= self.frameAmt or offset >= self.pageSizeBytes):
+            return False
+            # raise Exception("Memory address does not exist!")
+        
+        if not self.canAccess(identifier, frameIndex):
+            return False
+            # raise Exception("Incorrect permissions!")
 
+        return True
+    
     def canAccess(self, identifier, frameIndex):
         result = True
         
@@ -68,6 +76,6 @@ class PhysicalMemory:
         return pageAmt <= len(self.unallocatedFramesIndices)
 
     def debugOutput(self):
-        print(f"Page Frames Size: {self.totalFrameSize}, Page Size: {self.pageSizeBytes} Bytes")
+        print(f"Page Frames Size: {self.frameAmt}, Page Size: {self.pageSizeBytes} Bytes")
         print(self.pageFrames)
         print(self.unallocatedFramesIndices)
