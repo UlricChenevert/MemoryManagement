@@ -5,12 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Pipe main to output",
+            "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
-            "console": "integratedTerminal",
-            "args": ["> output.txt"]
+            "program": "${file}",
+            "console": "integratedTerminal"
         }
     ]
 }

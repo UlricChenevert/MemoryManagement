@@ -3,11 +3,14 @@ import PhysicalMemory
 
 # Object for "cpu" to iterate over, contains memory size and number of instructions
 class DummyProgram:
-    def __init__ (self, name, numberInstructions, memorySize):
+    def __init__ (self, name, numberInstructions, memoryRequirement):
         self.name = name
         self.numberInstructions = numberInstructions
-        self.memorySize = memorySize
-        self.lastMemoryAccess = (0, 0)
+        self.memoryRequirement = memoryRequirement
+
+        self.lastMemoryAccess = 0
+
+        # Updated upon memory allocation
         self.pageTable = {}
 
 def generateRandomProgram(name, config):
@@ -32,21 +35,31 @@ def generateRandomProgram(name, config):
 
 # Run for programs
 def runProgramCycle(program : DummyProgram, physicalMemory : PhysicalMemory.PhysicalMemory):
-    instructionLocation = determineNextMemoryAccessLocation(program.lastMemoryAccess, physicalMemory.pageSizeBytes, program.memorySize)
+    # Get next instruction location
+    nextInstructionLocation = determineNextMemoryAccessLocation(program.lastMemoryAccess, program.memoryRequirement)
+    logicalFrameIndex = nextInstructionLocation // physicalMemory.pageSizeBytes
+    offset = nextInstructionLocation % physicalMemory.pageSizeBytes
 
-    physicalMemory.accessMemory(program.pageTable[instructionLocation[0]], instructionLocation[1], program.name)
+    physicalFrameIndex = program.pageTable[logicalFrameIndex]
 
-    program.lastMemoryAccess = instructionLocation
+    # Get frame index and offset index
+    physicalMemory.accessMemory(physicalFrameIndex, offset, program.name)
+
+    # Update member variables
+    program.lastMemoryAccess = nextInstructionLocation
+
+    # Decrement instruction amt
     program.numberInstructions -= 1
 
-    return program.numberInstructions == 0
+    # Determine if program is finished
+    return program.numberInstructions <= 0
 
 # Bell curve function for "realistic memory access"
-def determineNextMemoryAccessLocation(lastMemoryAccess, pageSize, programMemorySize):
-    x = random.random()
+def determineNextMemoryAccessLocation(lastMemoryAccess, programMemorySize):
+    chance = random.random()
 
-    if (x > 0.9):
-        return (random.randint(0, programMemorySize - 1), random.randint(0, pageSize - 1))
+    if (chance > 0.9):
+        return random.randint(0, programMemorySize - 1) 
     else:
-        return (lastMemoryAccess[0], (lastMemoryAccess[1] + 1 ) % pageSize)
+        return lastMemoryAccess + 1
     
