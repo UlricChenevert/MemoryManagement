@@ -1,8 +1,9 @@
 import logging
 import DummyProgram
 import PhysicalMemory
+import Statistics
 
-def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : PhysicalMemory.PhysicalMemory):
+def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : PhysicalMemory.PhysicalMemory, pageSizeTestLevelStatistics : Statistics.PageSizeTestLevelStatistics):
     blockedQueue = []
     runningProgramsQueue = []
     clockCycle = 0
@@ -15,7 +16,7 @@ def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : Physical
 
             if physicalMemory.canAllocateMemoryAmt(blockedProgram.memoryRequirement):
                 #Update page table
-                coordinateProgramAllocation(blockedProgram, runningProgramsQueue, physicalMemory)
+                coordinateProgramAllocation(blockedProgram, runningProgramsQueue, physicalMemory, pageSizeTestLevelStatistics)
                 blockedQueue.pop(0)
             
         # Try to allocate program from program entry
@@ -24,7 +25,7 @@ def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : Physical
 
             if physicalMemory.canAllocateMemoryAmt(nextProgram.memoryRequirement):
                 #Update page table
-                coordinateProgramAllocation(nextProgram, runningProgramsQueue, physicalMemory)
+                coordinateProgramAllocation(nextProgram, runningProgramsQueue, physicalMemory, pageSizeTestLevelStatistics)
             else:
                 # If not place on blocked queue
                 blockedQueue.append(nextProgram)
@@ -38,13 +39,16 @@ def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : Physical
             if (isProgramFinished):
                 coordinateProgramDeallocation(currentProgram, runningProgramsQueue, physicalMemory)
 
+
+        memoryUsePercent = (physicalMemory.frameAmt - len(physicalMemory.unallocatedFramesIndices)) / physicalMemory.frameAmt * 100
+        Statistics.updateMemoryUse(pageSizeTestLevelStatistics, clockCycle, memoryUsePercent)
         logCPU(loggerObject, clockCycle, runningProgramsQueue, blockedQueue, physicalMemory)
 
         clockCycle += 1
 
-def coordinateProgramAllocation(process : DummyProgram.DummyProgram, runningProgramsQueue : list, physicalMemory : PhysicalMemory.PhysicalMemory):
+def coordinateProgramAllocation(process : DummyProgram.DummyProgram, runningProgramsQueue : list, physicalMemory : PhysicalMemory.PhysicalMemory, pageSizeTestLevelStatistics : Statistics.SampleTestLevelStatistics):
     #Update page table and allocate program
-    process.pageTable = physicalMemory.allocateProgram(process.name, process.memoryRequirement)
+    process.pageTable = physicalMemory.allocateProgram(process.name, process.memoryRequirement, pageSizeTestLevelStatistics)
 
     # Add to current program list
     runningProgramsQueue.append(process)

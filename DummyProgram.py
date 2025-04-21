@@ -12,6 +12,7 @@ class DummyProgram:
 
         # Updated upon memory allocation
         self.pageTable = {}
+        self.replacementQueue = []
 
 def generateRandomProgram(name, config):
     size = random.randint(0, 2)

@@ -1,22 +1,25 @@
 from math import ceil
 import numpy
 
+from Statistics import PageSizeTestLevelStatistics, updateInternalFragmentation, updatePageTableSizeVsProgramSize
+
 class PhysicalMemory:
-    def __init__(self, totalSizeBytes, pageSizeBytes):
+    def __init__(self, totalSizeBytes, pageSizeBytes, maxProgramSize):
         self.frameAmt: int = int(totalSizeBytes // pageSizeBytes) 
         self.pageSizeBytes : int = int(pageSizeBytes)
 
         self.pageFrames = numpy.resize(numpy.array([], dtype='<U10'), self.frameAmt)
+        self.maxProgramSize = maxProgramSize
 
         self.unallocatedFramesIndices = []
         for i in range(0, self.frameAmt):
             self.unallocatedFramesIndices.append(i)
 
-        # self.blockedQueue = [] should be blocked at higher process
 
     # Returns page table mapping
-    def allocateProgram(self, identifier, memoryRequirement):
+    def allocateProgram(self, identifier, memoryRequirement, statistics : PageSizeTestLevelStatistics):
         numberOfFramesNeeded = ceil(memoryRequirement / self.pageSizeBytes)
+        updateInternalFragmentation(statistics, memoryRequirement, self.pageSizeBytes*numberOfFramesNeeded)
 
         # Make sure that pageAmt doesn't exceed the amount of pages left
         if (not self.canAllocatePageAmt(numberOfFramesNeeded)):
@@ -26,10 +29,16 @@ class PhysicalMemory:
 
         # Allocate pages
         for pageIndex in range(numberOfFramesNeeded):
+            # Outside page size limit, then allocate virtual memory
+            # if (pageIndex > self.maxProgramSize):
+            #     print()
+            
+            # Else, allocate physical memory
             allocatedFrameIndex = self.pAllocateFrame(f"{identifier}{pageIndex}")
 
             programPageTable[pageIndex] = allocatedFrameIndex
-        
+
+        updatePageTableSizeVsProgramSize(statistics, len(programPageTable))
         return programPageTable
     
     def pAllocateFrame(self, referenceName):
@@ -58,6 +67,8 @@ class PhysicalMemory:
             return False
             # raise Exception("Memory address does not exist!")
         
+        # If virtual memory or physical memory
+
         if not self.canAccess(identifier, frameIndex):
             return False
             # raise Exception("Incorrect permissions!")
@@ -84,3 +95,4 @@ class PhysicalMemory:
         print(f"Page Frames Size: {self.frameAmt}, Page Size: {self.pageSizeBytes} Bytes")
         print(self.pageFrames)
         print(self.unallocatedFramesIndices)
+

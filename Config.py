@@ -11,12 +11,9 @@ lazyConfig = {
         "Medium" : {"Max":500, "Min":100},
         "Large" : {"Max":1000, "Min":500}
     },
-    # "ProgramMemorySizes": {
-    #     "Small" : {"Max":10, "Min":1},
-    #     "Medium" : {"Max":100, "Min":10},
-    #     "Large" : {"Max":500, "Min":100}
-    # },
-    "PageSizes":[1e3, 1e4, 1e5, 1e6, 1e6, 1e7], # In Bytes ranging from 1 KB to 1 GB
+    "PageSizes":[1e3, 1e4, 1e5, 1e6, 1e7], # In Bytes ranging from 1 KB to 1 GB
+    "PageSizeColors":{1e3:'blue', 1e4:'green', 1e5:'red', 1e6:'cyan', 1e7:'magenta'},
     "PhysicalMemorySize":1.6e8,
-    "testRandomSamplesAmt" : 10
+    "testRandomSamplesAmt" : 1,
+    "MaxFrameSize" : 10
 }

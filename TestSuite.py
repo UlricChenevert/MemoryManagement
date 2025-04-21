@@ -5,23 +5,36 @@ from CPUSimulation import simulateCPU
 import Config
 import DummyProgram
 import PhysicalMemory
+import Statistics
 
 def administerAllTests(config):
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename='output.txt', level=logging.DEBUG)
 
+    statistics : Statistics.Statistics = Statistics.Statistics(config)
+
     for i in range(config["testRandomSamplesAmt"]):
-        administerTest(generateProgramEntries(config), logger, config)
+        programEntries = generateProgramEntries(config)
+        
+        Statistics.updateStatisticsWithProgramEntries(statistics.sampleTestStatistics[i], programEntries)
+
+        administerTest(programEntries, logger, statistics.sampleTestStatistics[i], config)
+
+    Statistics.calculateAllStats(statistics)
+    # Statistics.printStats(statistics)
+    Statistics.printGraph(statistics, config)
 
 # Administers tests (from files)
-def administerTest(programEntries, logger : logging.Logger, config):
+def administerTest(programEntries, logger : logging.Logger, sampleTestStatistics : Statistics.SampleTestLevelStatistics, config):
     logger.debug(programEntries)
 
     pageSizeTests = config["PageSizes"]
 
-    for pageSize in pageSizeTests:
+    for i in range(len(pageSizeTests)):
+        pageSize = pageSizeTests[i]
+        
         logger.info(f"Starting {pageSize}.")
-        simulateCPU(logger, deepCopyOfProgramEntry(programEntries), PhysicalMemory.PhysicalMemory(config["PhysicalMemorySize"], pageSize))
+        simulateCPU(logger, deepCopyOfProgramEntry(programEntries), PhysicalMemory.PhysicalMemory(config["PhysicalMemorySize"], pageSize, config["MaxFrameSize"]), sampleTestStatistics.pageSizeTestLevelStatistics[i])
         logger.info(f"Finished {pageSize}.")
     
     logger.info("Program Finished")
@@ -54,5 +67,3 @@ def deepCopyOfProgramEntry(programEntries):
         temp[key] = DummyProgram.DummyProgram(value.name, value.numberInstructions, value.memoryRequirement)
 
     return temp
-
-administerAllTests(Config.lazyConfig)
