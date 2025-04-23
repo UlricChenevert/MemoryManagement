@@ -1,7 +1,7 @@
 from math import ceil
 import numpy
 
-from Statistics import PageSizeTestLevelStatistics, updateInternalFragmentation, updatePageTableSizeVsProgramSize
+from Statistics import PageSizeTestLevelStatistic, updateInternalFragmentation, updatePageTableSizeVsProgramSize
 
 class PhysicalMemory:
     def __init__(self, totalSizeBytes, pageSizeBytes, maxProgramSize):
@@ -17,29 +17,29 @@ class PhysicalMemory:
 
 
     # Returns page table mapping
-    def allocateProgram(self, identifier, memoryRequirement, statistics : PageSizeTestLevelStatistics):
-        numberOfFramesNeeded = ceil(memoryRequirement / self.pageSizeBytes)
-        updateInternalFragmentation(statistics, memoryRequirement, self.pageSizeBytes*numberOfFramesNeeded)
+    def allocateProgram(self, identifier, memoryRequirement, statistics : PageSizeTestLevelStatistic):
+        leftOverMemory = memoryRequirement % self.pageSizeBytes
+        updateInternalFragmentation(statistics, leftOverMemory, self.pageSizeBytes)
+        
+        numberOfFramesNeeded = min(ceil(memoryRequirement / self.pageSizeBytes), self.maxProgramSize) 
+        # updateInternalFragmentation(statistics, memoryRequirement, self.pageSizeBytes*numberOfFramesNeeded)
 
         # Make sure that pageAmt doesn't exceed the amount of pages left
         if (not self.canAllocatePageAmt(numberOfFramesNeeded)):
             raise Exception(f"Memory overflow! Unable to allocate {identifier}")
 
         programPageTable = {}
+        programAllocationQueue = []
 
         # Allocate pages
         for pageIndex in range(numberOfFramesNeeded):
-            # Outside page size limit, then allocate virtual memory
-            # if (pageIndex > self.maxProgramSize):
-            #     print()
-            
-            # Else, allocate physical memory
             allocatedFrameIndex = self.pAllocateFrame(f"{identifier}{pageIndex}")
 
             programPageTable[pageIndex] = allocatedFrameIndex
+            programAllocationQueue.append(pageIndex)
 
         updatePageTableSizeVsProgramSize(statistics, len(programPageTable))
-        return programPageTable
+        return (programPageTable, programAllocationQueue)
     
     def pAllocateFrame(self, referenceName):
         # Making private method to eliminate double checking (one made at parent call)

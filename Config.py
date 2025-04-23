@@ -1,5 +1,5 @@
 lazyConfig = {
-    "NumberOfPrograms":10,
+    "NumberOfPrograms":5,
     "AverageArrivalTime":100,
     "ProgramMemorySizes": {
         "Small" : {"Max":10000, "Min":1000},

@@ -20,12 +20,11 @@ def administerAllTests(config):
 
         administerTest(programEntries, logger, statistics.sampleTestStatistics[i], config)
 
-    Statistics.calculateAllStats(statistics)
-    # Statistics.printStats(statistics)
+    Statistics.compileAndOutputStats(statistics, config)
     Statistics.printGraph(statistics, config)
 
 # Administers tests (from files)
-def administerTest(programEntries, logger : logging.Logger, sampleTestStatistics : Statistics.SampleTestLevelStatistics, config):
+def administerTest(programEntries, logger : logging.Logger, sampleTestStatistics : Statistics.PageSizeTestLevelStatistic, config):
     logger.debug(programEntries)
 
     pageSizeTests = config["PageSizes"]
@@ -34,7 +33,7 @@ def administerTest(programEntries, logger : logging.Logger, sampleTestStatistics
         pageSize = pageSizeTests[i]
         
         logger.info(f"Starting {pageSize}.")
-        simulateCPU(logger, deepCopyOfProgramEntry(programEntries), PhysicalMemory.PhysicalMemory(config["PhysicalMemorySize"], pageSize, config["MaxFrameSize"]), sampleTestStatistics.pageSizeTestLevelStatistics[i])
+        simulateCPU(logger, deepCopyOfProgramEntry(programEntries), PhysicalMemory.PhysicalMemory(config["PhysicalMemorySize"], pageSize, config["MaxFrameSize"]), sampleTestStatistics.pageSizeTestLevelStatistics[pageSize])
         logger.info(f"Finished {pageSize}.")
     
     logger.info("Program Finished")

@@ -3,7 +3,7 @@ import DummyProgram
 import PhysicalMemory
 import Statistics
 
-def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : PhysicalMemory.PhysicalMemory, pageSizeTestLevelStatistics : Statistics.PageSizeTestLevelStatistics):
+def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : PhysicalMemory.PhysicalMemory, pageSizeTestLevelStatistics : Statistics.PageSizeTestLevelStatistic):
     blockedQueue = []
     runningProgramsQueue = []
     clockCycle = 0
@@ -33,7 +33,7 @@ def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : Physical
         # Run program current program (if any)
         if (len(runningProgramsQueue) > 0): 
             currentProgram : DummyProgram.DummyProgram = runningProgramsQueue[0]
-            isProgramFinished = DummyProgram.runProgramCycle(currentProgram, physicalMemory)
+            isProgramFinished = DummyProgram.runProgramCycle(currentProgram, physicalMemory, pageSizeTestLevelStatistics)
 
             # if finished deallocate
             if (isProgramFinished):
@@ -46,9 +46,9 @@ def simulateCPU(loggerObject, programsSchedule : dict, physicalMemory : Physical
 
         clockCycle += 1
 
-def coordinateProgramAllocation(process : DummyProgram.DummyProgram, runningProgramsQueue : list, physicalMemory : PhysicalMemory.PhysicalMemory, pageSizeTestLevelStatistics : Statistics.SampleTestLevelStatistics):
+def coordinateProgramAllocation(process : DummyProgram.DummyProgram, runningProgramsQueue : list, physicalMemory : PhysicalMemory.PhysicalMemory, pageSizeTestLevelStatistics : Statistics.PageSizeTestLevelStatistic):
     #Update page table and allocate program
-    process.pageTable = physicalMemory.allocateProgram(process.name, process.memoryRequirement, pageSizeTestLevelStatistics)
+    process.pageTable, process.replacementQueue = physicalMemory.allocateProgram(process.name, process.memoryRequirement, pageSizeTestLevelStatistics)
 
     # Add to current program list
     runningProgramsQueue.append(process)
@@ -70,7 +70,7 @@ def logCPU(logger : logging.Logger, clockCycle : int, runningProgramsQueue : lis
     logger.debug(f"Running Processes Amt: {len(runningProgramsQueue)} ")
     logger.debug(f"Blocked Processes Amt: {len(blockedQueue)} ")
     usage = round((physicalMemory.frameAmt - len(physicalMemory.unallocatedFramesIndices)) / physicalMemory.frameAmt * 100)
-    if (usage > 90):
-        print("!")
+    # if (usage > 90):
+    #     print("!")
     
     logger.debug(f"Memory Usage: {usage}%")

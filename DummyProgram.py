@@ -1,5 +1,6 @@
 import random
 import PhysicalMemory
+from Statistics import PageSizeTestLevelStatistic, updatePageFaults
 
 # Object for "cpu" to iterate over, contains memory size and number of instructions
 class DummyProgram:
@@ -35,12 +36,17 @@ def generateRandomProgram(name, config):
     return DummyProgram(name, instructionsSize, memorySize)
 
 # Run for programs
-def runProgramCycle(program : DummyProgram, physicalMemory : PhysicalMemory.PhysicalMemory):
+def runProgramCycle(program : DummyProgram, physicalMemory : PhysicalMemory.PhysicalMemory, statistics : PageSizeTestLevelStatistic):
     # Get next instruction location
     nextInstructionLocation = determineNextMemoryAccessLocation(program.lastMemoryAccess, program.memoryRequirement)
     logicalFrameIndex = nextInstructionLocation // physicalMemory.pageSizeBytes
     offset = nextInstructionLocation % physicalMemory.pageSizeBytes
 
+    # Check if memory is virtual, then replace page in FIFO fashion
+    if not logicalFrameIndex in program.pageTable:
+        retrieveVirtualMemory(program, logicalFrameIndex)
+        updatePageFaults(statistics)
+        
     physicalFrameIndex = program.pageTable[logicalFrameIndex]
 
     # Get frame index and offset index
@@ -54,6 +60,16 @@ def runProgramCycle(program : DummyProgram, physicalMemory : PhysicalMemory.Phys
 
     # Determine if program is finished
     return program.numberInstructions <= 0
+
+def retrieveVirtualMemory(program : DummyProgram, logicalFrameIndex):
+    oldestAllocationIndex = program.replacementQueue.pop(0)
+
+    freedPhysicalMemoryIndex = program.pageTable.pop(oldestAllocationIndex)
+    
+    # Create new mapping with desired index
+    program.pageTable[logicalFrameIndex] = freedPhysicalMemoryIndex
+    
+    program.replacementQueue.append(logicalFrameIndex)
 
 # Bell curve function for "realistic memory access"
 def determineNextMemoryAccessLocation(lastMemoryAccess, programMemorySize):
